@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Controle de Gastos</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #f4f7f6; padding: 16px; color: #111827; }
+        .container { max-width: 480px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        h2 { text-align: center; margin-bottom: 16px; color: #111827; }
+        .balance-card { background: linear-gradient(135deg, #2563eb, #0f172a); color: white; padding: 18px; border-radius: 12px; text-align: center; margin-bottom: 16px; }
+        .balance-card h3 { font-size: 14px; font-weight: 400; opacity: 0.9; }
+        .balance-card p { font-size: 24px; font-weight: 700; margin-top: 6px; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 6px; font-size: 14px; }
+        input, select, button { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 14px; }
+        button { background: #2563eb; color: white; border: none; font-weight: 600; margin-top: 4px; }
+        .btn-export { background: #059669; }
+        .history { margin-top: 18px; }
+        .history h3 { font-size: 16px; margin-bottom: 10px; }
+        ul { list-style: none; }
+        li { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; margin-bottom: 8px; border-radius: 8px; background: #f8fafc; border-left: 5px solid #ccc; }
+        li.income { border-left-color: #10b981; }
+        li.expense { border-left-color: #ef4444; }
+        .delete-btn { background: none; border: none; color: #ef4444; width: auto; padding: 0 6px; margin: 0; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Controle Financeiro</h2>
+        <div class="balance-card">
+            <h3>Saldo Atual</h3>
+            <p id="balance">R$ 0,00</p>
+        </div>
+        <form id="transaction-form">
+            <div class="form-group">
+                <label for="description">Descrição</label>
+                <input type="text" id="description" placeholder="Ex: Salário, Mercado..." required>
+            </div>
+            <div class="form-group">
+                <label for="amount">Valor (R$)</label>
+                <input type="number" id="amount" step="0.01" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+                <label for="type">Tipo</label>
+                <select id="type">
+                    <option value="income">Entrada (+)</option>
+                    <option value="expense">Saída (-)</option>
+                </select>
+            </div>
+            <button type="submit">Adicionar Transação</button>
+        </form>
+        <button class="btn-export" type="button" onclick="alert('Funcionalidade de exportação disponível na versão web original.')">Exportar</button>
+        <div class="history">
+            <h3>Histórico</h3>
+            <ul id="transaction-list"></ul>
+        </div>
+    </div>
+    <script>
+        const balanceEl = document.getElementById('balance');
+        const form = document.getElementById('transaction-form');
+        const descriptionInput = document.getElementById('description');
+        const amountInput = document.getElementById('amount');
+        const typeInput = document.getElementById('type');
+        const listEl = document.getElementById('transaction-list');
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+        function formatCurrency(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function updateUI() {
+            listEl.innerHTML = '';
+            let total = 0;
+            transactions.forEach((transaction, index) => {
+                const isIncome = transaction.type === 'income';
+                const amount = isIncome ? transaction.amount : -transaction.amount;
+                total += amount;
+                const li = document.createElement('li');
+                li.className = isIncome ? 'income' : 'expense';
+                li.innerHTML = `
+                    <span>${transaction.description}</span>
+                    <span>
+                        ${formatCurrency(amount)}
+                        <button class="delete-btn" onclick="removeTransaction(${index})">✕</button>
+                    </span>`;
+                listEl.appendChild(li);
+            });
+            balanceEl.textContent = formatCurrency(total);
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+
+        function addTransaction(e) {
+            e.preventDefault();
+            const description = descriptionInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const type = typeInput.value;
+            if (description === '' || isNaN(amount) || amount <= 0) return;
+            transactions.push({ description, amount, type });
+            descriptionInput.value = '';
+            amountInput.value = '';
+            updateUI();
+        }
+
+        function removeTransaction(index) {
+            transactions.splice(index, 1);
+            updateUI();
+        }
+
+        form.addEventListener('submit', addTransaction);
+        updateUI();
+    </script>
+</body>
+</html>
